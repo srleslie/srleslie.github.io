@@ -21,18 +21,15 @@ Readers familiar with these three documents will feel that they appear to have a
 
 This situation is to some extent determined by the order in which Coresight and ADI appeared in history. It should be clear that the introduction of Coresight is to address the issue of debugging multi-core architectures that first appeared in ARM 11. Prior to this, the debug feature defined by the Arm architecture was sufficient to handle single core debugging scenarios, and the debug interface at that time was entirely based on the JTAG scan chain approach.
 
-That is to say, ADI existed before the advent of Coresight. After the emergence of Coresight, Arm did not simply merge it into Coresight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non-Coresight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents.
+That is to say, ADI existed before the advent of Coresight. After the emergence of Coresight, Arm did not simply merge it into Coresight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non-Coresight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents, as shown in the following Figure 0-1.
 
 ![Figure 0-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png)
-<font size=2 >Figure 0-1 DAP topology in ADI</font>
-
 
 On the contrary, the scope of the Coresight architecture includes a DAP implementation that conforms to the ADI architecture. That is, the Coresight architecture stipulates that its components must be debugged using the ADI component's port, while the ADI architecture indicates that the implementation of the ADI architecture may not necessarily be used to debug Coresight components.
 
-Below is a simplified debug function block diagram in SoC to illustrate the scope of responsibility and relationships between the ARM ARM/Coresight/ADI architectures in a real system.
+The following Figure 0-2 depicts a simplified section of the debug function in SoC, which illustrates the scope of responsibility and relationships between the Arm ARM/Coresight/ADI architectures in a real system.
 
 ![Figure 0-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-2.png)
-<font color=#C0C0C0 >Figure 0-2 Debug architecture in a real system</font>
 
 As shown in the caption, the three main colors in this schematic represent the implementation of the three architecture definitions. The debug/trace unit functions within the Core are defined by Arm ARM, such as debug breakpoint/watchpoint or ETM/ETE implementations, but their special markings in the graph indicate that they have a series of registers (PIDx/CIDx) defined by Core to support the topology detection of the Coresight system.
 
@@ -47,36 +44,31 @@ For hardware engineers, it is intuitive to first think that the relevant registe
 
 The field in the ROM Table that stores component addresses is a set of read-only register heaps, with each entry holding a `[x:12]` address to point to a particular component. Each component occupies 4KB of address space, which is used to store the registers of the component. Each unit within the core with an external debug interface, such as debug/trace/pmu, is indexed as a component.
 
-The following is an example of accessing a Cortex-A core within a DynamIQ Cluster to illustrate this mechanism:
+The following Figure 1-1 is an example of accessing a Cortex-A core within a DynamIQ Cluster to illustrate this mechanism:
 
 ![Figure 1-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-1.png)
-Figure 1-1 Debug components in DynamIQ Cluster
 
-In the figure, the ROM Table connected to DP is called DP ROM, which is usually located at address `0x0` to discover MEM-APs in the system. For the access path to the cluster (usually using APB-AP for A core), there will be another cluster level ROM table with an address equal to the APB-AP base address `+ 0 offset` where it is located, to discover debug resources within this APB-AP subsystem.
+In this figure, the ROM Table connected to DP is called DP ROM, which is usually located at address `0x0` to discover MEM-APs in the system. For the access path to the cluster (usually using APB-AP for A core), there will be another cluster level ROM table with an address equal to the APB-AP base address `+ 0 offset` where it is located, to discover debug resources within this APB-AP subsystem.
 
-The above figure is a simplified diagram. In the actual A core SoC, there may be more nesting from DP ROM to the final Cluster level ROM Table. The following figure is an example from the Arm Corstone SSE-710 subsystem[^4]:
+However, Figure 1-1 is a simplified diagram. In the actual A core SoC, there may be more nesting from DP ROM to the final Cluster level ROM Table. The following Figure 1-2 is an example from the Arm Corstone SSE-710 subsystem[^4]:
 
 ![Figure 1-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-2.png)
-Figure 1-2 ROM table structure of SSE-710
 
 I have annotated the positions corresponding to DP ROM, APB-AP, and Cluster level ROM Table in Figure 1-1 in the upper middle. The 'Host' in SSE-710 refers to the AP (Application Processor) Compared to Figure 1-1, there are more Host ROMs and EXTDBGROMs on the path from DP to Host CPU. The former can not only point to the Cluster level ROM Table, but also to the Core sight component in the AP subsystem (roughly the green part in the dashed box in Figure 0-2); The latter involves inserting a stage between DP ROM and MEM-APs, allowing DP ROM to not only point to MEM-APs, but also to GPIO or APBCOM (related to secure debugging, as discussed below).
 
-The TRM of Arm core will provide an external debug memory map. Taking A53[^5] as an example, it has a maximum of 4 cores in MPcore configuration:
+The TRM of Arm core will provide an external debug memory map. Taking A53[^5] as an example, it has a maximum of 4 cores in MPcore configuration, as shown in the following Figure 1-3.
 
 ![Figure 1-3](https://github.com/srleslie/srleslie.github.io/blob/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-3.png?raw=true)
-Figure 1-3 Cortex-A53 external debug memory map
 
-Next, we will discuss another interface for debug register. Consider making a simple supplement to Figure 1-1: create an APB port from the interconnect to bypass the entrance of the subsystem accessed by APB-AP, as shown in the following figure.
+Next, we will discuss another interface for debug register. Consider making a simple supplement to Figure 1-1: create an APB port from the interconnect to bypass the entrance of the subsystem accessed by APB-AP, as shown in the following Figure 1-4.
 
 ![Figure 1-4](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-4.png)
-Figure 1-4 Debug components in DynamIQ Cluster
 
 This routing provides the core with visibility into debug resources within a certain subsystem (which can also be extended to the entire SoC), and Arm calls it the memory mapped interface Essentially, this type of interface only reuses the external debug interface, without adding any additional interfaces to the debug register itself. By mapping external debug memory maps to the system's memory map, the core can access these debug registers without relying on external debuggers.
 
-Observing the memory map of the Juno SoC[^6] integrated with A53, it can be seen from 0x2300_ The starting address of 0000 is consistent with the external debug memory map of A53, with a slight difference being that Juno SoC has inserted some Core sight components into the A53 reserve area.
+Observing the memory map of the Juno SoC[^6] integrated with A53 in the following Figure 1-5, it can be seen from 0x2300_ The starting address of 0000 is consistent with the external debug memory map of A53, with a slight difference being that Juno SoC has inserted some Core sight components into the A53 reserve area.
 
 ![Figure 1-5](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-5.png)
-Figure 1-5 Arm Juno SoC memory map
 
 The external debug memory map provides support for on chip debugging at the hardware level, while in actual on chip debugging, Arm emphasizes another debugging model (different from external debugging), namely self hosted debugging This model will be discussed separately in the next section, where it will explain its impact on the debug register interface - a third interface, commonly known as the system register interface, is introduced.
 
