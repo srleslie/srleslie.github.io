@@ -59,8 +59,8 @@ The ultimate goal of various forms of debugging is to obtain the state of the co
 ### 2.3 secure debug
 
 ## Glossary
-| Term | Meaning                        |
 
+| Term | Meaning                        |
 | ADI  | Arm Debug Interface            |
 | AON  | Always-ON                      |
 | AP   | Access Port                    |
@@ -77,7 +77,6 @@ The ultimate goal of various forms of debugging is to obtain the state of the co
 | SCP  | System Control Processor       |
 | TRM  | Technical Reference Manual     |
 
-*Table syntax cannot be displayed correctly here. Click [here](https://github.com/srleslie/srleslie.github.io/blob/master/_posts/2023-08-27-exploring-arm-debug-architecture.md#glossary) for a better reading experience*
 
 
 <br/>
