@@ -9,9 +9,9 @@ permalink: /posts/2023/08/exploring-arm-debug-architecture/
 
 Arm's definition of the debug architecture is scattered across three documents:
 
-- Arm ARM[Arm ARM][1], as an instruction set manual, defines the debug/trace function within the processor, which is also the cornerstone of the debug debugging architecture
-- Coresight[Coresight][2] architecture defines debug/trace behavior that is compatible with ARM processors, essentially an extension of the debug feature in Arm architecture
-- ADI[ADI][3] architecture defines the specification for the physical connection (JTAG/SWD) between Arm based SoC and the external environment
+- Arm ARM<a name="_ftnref1" href="#_ftn1">[1]</a>, as an instruction set manual, defines the debug/trace function within the processor, which is also the cornerstone of the debug debugging architecture
+- Coresight<a name="_ftnref2" href="#_ftn2">[2]</a> architecture defines debug/trace behavior that is compatible with ARM processors, essentially an extension of the debug feature in Arm architecture
+- ADI<a name="_ftnref3" href="#_ftn3">[3]</a> architecture defines the specification for the physical connection (JTAG/SWD) between Arm based SoC and the external environment
 
 > The meaning of the name Corespight is to provide users with a visibility into the kernel. Both ARM's own legacy design suite RealView and the RISC-V camp's Sifive Insight express the same meaning
 
@@ -22,8 +22,10 @@ This situation is to some extent determined by the order in which Corespight and
 That is to say, ADI existed before the advent of Corespight. After the emergence of Corespight, Arm did not simply merge it into Corespight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non Core sight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents.
 
 
-![](assets/2023-08-27-exploring-arm-debug-architecture/0-1.png "Figure 0-1 DAP topology in ADI")
+![Figure 0-1 DAP topology in ADI](https://srleslie.github.io/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png "Figure 0-1 DAP topology in ADI")
 
-[1]: https://developer.arm.com/documentation/ddi0487/ja/?lang=en
-[2]: https://developer.arm.com/documentation/ihi0029/f/?lang=en
-[3]: https://developer.arm.com/documentation/ihi0074/d/?lang=en
+
+
+<a name="_ftn1" href="#_ftnref1">[1]</a> Arm Architecture Reference Manual for A-profile architecture https://developer.arm.com/documentation/ddi0487/ja/?lang=en</p>
+<a name="_ftn2" href="#_ftnref2">[2]</a> Arm CoreSight Architecture Specification v3.0 https://developer.arm.com/documentation/ihi0029/f/?lang=en</p>
+<a name="_ftn3" href="#_ftnref3">[3]</a> Arm Debug Interface Architecture Specification ADIv6.0 https://developer.arm.com/documentation/ihi0074/d/?lang=en</p>
