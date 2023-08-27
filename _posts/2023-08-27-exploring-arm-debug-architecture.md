@@ -11,7 +11,7 @@ permalink: /posts/2023/08/exploring-arm-debug-architecture/
 
 Arm's definition of the debug architecture is scattered across three documents:
 
-- Arm ARM<a name="_ftnref1" href="#_ftn1">[1]</a>, as an instruction set manual, defines the debug/trace function within the processor, which is also the cornerstone of the debug debugging architecture
+- Arm ARM[^1], as an instruction set manual, defines the debug/trace function within the processor, which is also the cornerstone of the debug debugging architecture
 - Coresight<a name="_ftnref2" href="#_ftn2">[2]</a> architecture defines debug/trace behavior that is compatible with ARM processors, essentially an extension of the debug feature in Arm architecture
 - ADI<a name="_ftnref3" href="#_ftn3">[3]</a> architecture defines the specification for the physical connection (JTAG/SWD) between Arm based SoC and the external environment
 
@@ -101,7 +101,8 @@ System registers are concrete entities that provide Arm architecture functionali
 
 ## Glossary
 
-| **Term** | **Meaning**                |
+| Term | Meaning                        |
+| :--- | :----------------------------- |
 | ADI  | Arm Debug Interface            |
 | AON  | Always-ON                      |
 | AP   | Access Port                    |
@@ -123,6 +124,8 @@ System registers are concrete entities that provide Arm architecture functionali
 <br/>
 
 ## Reference
+
+[^1]: Arm ARM 
 
 <font size=2 color=#C0C0C0><a name="_ftn1" href="#_ftnref1">[1]</a> Arm Architecture Reference Manual for A-profile architecture https://developer.arm.com/documentation/ddi0487/ja/?lang=en</font>
 
