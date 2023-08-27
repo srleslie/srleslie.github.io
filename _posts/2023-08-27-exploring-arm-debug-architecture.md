@@ -24,14 +24,14 @@ This situation is to some extent determined by the order in which Coresight and 
 That is to say, ADI existed before the advent of Coresight. After the emergence of Coresight, Arm did not simply merge it into Coresight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non-Coresight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents.
 
 ![Figure 0-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png)
-<center style="font-size:14px;color:#C0C0C0">Figure 0-1 DAP topology in ADI</center><br/>
+<center style="font-size:14px;color:#C0C0C0">Figure 0-1 DAP topology in ADI</center>
 
 On the contrary, the scope of the Coresight architecture includes a DAP implementation that conforms to the ADI architecture. That is, the Coresight architecture stipulates that its components must be debugged using the ADI component's port, while the ADI architecture indicates that the implementation of the ADI architecture may not necessarily be used to debug Coresight components.
 
 Below is a simplified debug function block diagram in SoC to illustrate the scope of responsibility and relationships between the ARM ARM/Coresight/ADI architectures in a real system.
 
 ![Figure 0-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-2.png)
-<center style="font-size:14px;color:#C0C0C0">Figure 0-2 Debug architecture in a real system</center><br/>
+<center style="font-size:14px;color:#C0C0C0">Figure 0-2 Debug architecture in a real system</center>
 
 As shown in the caption, the three main colors in this schematic represent the implementation of the three architecture definitions. The debug/trace unit functions within the Core are defined by Arm ARM, such as debug breakpoint/watchpoint or ETM/ETE implementations, but their special markings in the graph indicate that they have a series of registers (PIDx/CIDx) defined by Core to support the topology detection of the Coresight system.
 
@@ -49,14 +49,14 @@ The field in the ROM Table that stores component addresses is a set of read-only
 The following is an example of accessing a Cortex-A core within a DynamIQ Cluster to illustrate this mechanism:
 
 ![Figure 1-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-1.png)
-<center style="font-size:14px;color:#C0C0C0">Figure 1-1 Debug components in DynamIQ Cluster</center><br/>
+<center style="font-size:14px;color:#C0C0C0">Figure 1-1 Debug components in DynamIQ Cluster</center>
 
 In the figure, the ROM Table connected to DP is called DP ROM, which is usually located at address `0x0` to discover MEM-APs in the system. For the access path to the cluster (usually using APB-AP for A core), there will be another cluster level ROM table with an address equal to the APB-AP base address `+ 0 offset` where it is located, to discover debug resources within this APB-AP subsystem.
 
 The above figure is a simplified diagram. In the actual A core SoC, there may be more nesting from DP ROM to the final Cluster level ROM Table. The following figure is an example from the Arm Corstone SSE-710 subsystem<a name="_ftnref4" href="#_ftn4">[4]</a>:
 
 ![Figure 1-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-2.png)
-<center style="font-size:14px;color:#C0C0C0">Figure 1-2 ROM table structure of SSE-710</center><br/>
+<center style="font-size:14px;color:#C0C0C0">Figure 1-2 ROM table structure of SSE-710</center>
 
 I have annotated the positions corresponding to DP ROM, APB-AP, and Cluster level ROM Table in Figure 1-1 in the upper middle. The 'Host' in SSE-710 refers to the AP (Application Processor) Compared to Figure 1-1, there are more Host ROMs and EXTDBGROMs on the path from DP to Host CPU. The former can not only point to the Cluster level ROM Table, but also to the Core sight component in the AP subsystem (roughly the green part in the dashed box in Figure 0-2); The latter involves inserting a stage between DP ROM and MEM-APs, allowing DP ROM to not only point to MEM-APs, but also to GPIO or APBCOM (related to secure debugging, as discussed below).
 
