@@ -22,7 +22,7 @@ This situation is to some extent determined by the order in which Corespight and
 That is to say, ADI existed before the advent of Corespight. After the emergence of Corespight, Arm did not simply merge it into Corespight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non Core sight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents.
 
 
-![Figure 0-1 DAP topology in ADI](https://srleslie.github.io/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png "Figure 0-1 DAP topology in ADI")
+![Figure 0-1 DAP topology in ADI](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png)
 
 
 
