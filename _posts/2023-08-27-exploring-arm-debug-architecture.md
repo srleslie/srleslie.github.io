@@ -50,33 +50,33 @@ The field in the ROM Table that stores component addresses is a set of read-only
 The following is an example of accessing a Cortex-A core within a DynamIQ Cluster to illustrate this mechanism:
 
 ![Figure 1-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-1.png)
-<font size=2;fony color=#C0C0C0>Figure 1-1 Debug components in DynamIQ Cluster</font>
+Figure 1-1 Debug components in DynamIQ Cluster
 
 In the figure, the ROM Table connected to DP is called DP ROM, which is usually located at address `0x0` to discover MEM-APs in the system. For the access path to the cluster (usually using APB-AP for A core), there will be another cluster level ROM table with an address equal to the APB-AP base address `+ 0 offset` where it is located, to discover debug resources within this APB-AP subsystem.
 
 The above figure is a simplified diagram. In the actual A core SoC, there may be more nesting from DP ROM to the final Cluster level ROM Table. The following figure is an example from the Arm Corstone SSE-710 subsystem<a name="_ftnref4" href="#_ftn4">[4]</a>:
 
 ![Figure 1-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-2.png)
-<font size=2;fony color=#C0C0C0>Figure 1-2 ROM table structure of SSE-710</font>
+Figure 1-2 ROM table structure of SSE-710
 
 I have annotated the positions corresponding to DP ROM, APB-AP, and Cluster level ROM Table in Figure 1-1 in the upper middle. The 'Host' in SSE-710 refers to the AP (Application Processor) Compared to Figure 1-1, there are more Host ROMs and EXTDBGROMs on the path from DP to Host CPU. The former can not only point to the Cluster level ROM Table, but also to the Core sight component in the AP subsystem (roughly the green part in the dashed box in Figure 0-2); The latter involves inserting a stage between DP ROM and MEM-APs, allowing DP ROM to not only point to MEM-APs, but also to GPIO or APBCOM (related to secure debugging, as discussed below).
 
 The TRM of Arm core will provide an external debug memory map. Taking A53<a name="_ftnref5" href="#_ftn5">[5]</a> as an example, it has a maximum of 4 cores in MPcore configuration:
 
 ![Figure 1-3](https://github.com/srleslie/srleslie.github.io/blob/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-3.png?raw=true)
-<font size=2;fony color=#C0C0C0>Figure 1-3 Cortex-A53 external debug memory map</font>
+Figure 1-3 Cortex-A53 external debug memory map
 
 Next, we will discuss another interface for debug register. Consider making a simple supplement to Figure 1-1: create an APB port from the interconnect to bypass the entrance of the subsystem accessed by APB-AP, as shown in the following figure.
 
 ![Figure 1-4](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-4.png)
-<font size=2;fony color=#C0C0C0>Figure 1-4 Debug components in DynamIQ Cluster</font>
+Figure 1-4 Debug components in DynamIQ Cluster
 
 This routing provides the core with visibility into debug resources within a certain subsystem (which can also be extended to the entire SoC), and Arm calls it the memory mapped interface Essentially, this type of interface only reuses the external debug interface, without adding any additional interfaces to the debug register itself. By mapping external debug memory maps to the system's memory map, the core can access these debug registers without relying on external debuggers.
 
 Observing the memory map of the Juno SoC<a name="_ftnref6" href="#_ftn6">[6]</a> integrated with A53, it can be seen from 0x2300_ The starting address of 0000 is consistent with the external debug memory map of A53, with a slight difference being that Juno SoC has inserted some Core sight components into the A53 reserve area.
 
 ![Figure 1-5](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-5.png)
-<font size=2;fony color=#C0C0C0>Figure 1-5 Arm Juno SoC memory map</font>
+Figure 1-5 Arm Juno SoC memory map
 
 The external debug memory map provides support for on chip debugging at the hardware level, while in actual on chip debugging, Arm emphasizes another debugging model (different from external debugging), namely self hosted debugging This model will be discussed separately in the next section, where it will explain its impact on the debug register interface - a third interface, commonly known as the system register interface, is introduced.
 
@@ -124,14 +124,14 @@ System registers are concrete entities that provide Arm architecture functionali
 
 ## Reference
 
-<font size=2;fony color=#C0C0C0><a name="_ftn1" href="#_ftnref1">[1]</a> Arm Architecture Reference Manual for A-profile architecture https://developer.arm.com/documentation/ddi0487/ja/?lang=en</font>
+<font size=2 color=#C0C0C0><a name="_ftn1" href="#_ftnref1">[1]</a> Arm Architecture Reference Manual for A-profile architecture https://developer.arm.com/documentation/ddi0487/ja/?lang=en</font>
 
-<a name="_ftn2" href="#_ftnref2">[2]</a> Arm CoreSight Architecture Specification v3.0 https://developer.arm.com/documentation/ihi0029/f/?lang=en
+<font size=2 color=#C0C0C0><a name="_ftn2" href="#_ftnref2">[2]</a> Arm CoreSight Architecture Specification v3.0 https://developer.arm.com/documentation/ihi0029/f/?lang=en
 
-<a name="_ftn3" href="#_ftnref3">[3]</a> Arm Debug Interface Architecture Specification ADIv6.0 https://developer.arm.com/documentation/ihi0074/d/?lang=en
+<font size=2 color=#C0C0C0><a name="_ftn3" href="#_ftnref3">[3]</a> Arm Debug Interface Architecture Specification ADIv6.0 https://developer.arm.com/documentation/ihi0074/d/?lang=en
 
-<a name="_ftnref4" href="#_ftn4">[4]</a> Arm Corstone SSE-710 Subsystem Technical Reference Manual https://developer.arm.com/documentation/102342/0000/?lang=en
+<font size=2 color=#C0C0C0><a name="_ftnref4" href="#_ftn4">[4]</a> Arm Corstone SSE-710 Subsystem Technical Reference Manual https://developer.arm.com/documentation/102342/0000/?lang=en
 
-<a name="_ftnref5" href="#_ftn5">[5]</a> Arm Cortex-A53 MPCore Processor Technical Reference Manual https://developer.arm.com/documentation/ddi0500/j/?lang=en
+<font size=2 color=#C0C0C0><a name="_ftnref5" href="#_ftn5">[5]</a> Arm Cortex-A53 MPCore Processor Technical Reference Manual https://developer.arm.com/documentation/ddi0500/j/?lang=en
 
 
