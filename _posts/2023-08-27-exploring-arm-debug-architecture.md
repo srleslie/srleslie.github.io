@@ -23,15 +23,17 @@ This situation is to some extent determined by the order in which Coresight and 
 
 That is to say, ADI existed before the advent of Coresight. After the emergence of Coresight, Arm did not simply merge it into Coresight in order to achieve forward compatibility with ADI. In this way, ADI is architecturally compatible with the emerging multi-core Core sight architecture and the so-called legacy scan chain based (non-Coresight) architectures of ARM7 and ARM9. The former uses MEM-AP access in ADI, while the latter uses JTAG-AP access, which is also one of the meanings of the AP topology diagram in ADI documents.
 
-![Figure 0-1 DAP topology in ADI](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png)
+![Figure 0-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-1.png)
+<center style="font-size:14px;color:#C0C0C0">Figure 0-1 DAP topology in ADI</center></br>
 
 On the contrary, the scope of the Coresight architecture includes a DAP implementation that conforms to the ADI architecture. That is, the Coresight architecture stipulates that its components must be debugged using the ADI component's port, while the ADI architecture indicates that the implementation of the ADI architecture may not necessarily be used to debug Coresight components.
 
-Below is a simplified debug function block diagram in SoC to illustrate the scope of responsibility and relationships between the ARM ARM/Corespight/ADI architectures in a real system.
+Below is a simplified debug function block diagram in SoC to illustrate the scope of responsibility and relationships between the ARM ARM/Coresight/ADI architectures in a real system.
 
-![Figure 0-1 DAP topology in ADI](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-2.png)
+![Figure 0-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/0-2.png)
+<center style="font-size:14px;color:#C0C0C0">Figure 0-2 Debug architecture in a real system</center></br>
 
-As shown in the caption, the three main colors in this schematic represent the implementation of the three architecture definitions. The debug/trace unit functions within the Core are defined by Arm ARM, such as debug breakpoint/watchpoint or ETM/ETE implementations, but their special markings in the graph indicate that they have a series of registers (PIDx/CIDx) defined by Core to support the topology detection of the Core Insight system
+As shown in the caption, the three main colors in this schematic represent the implementation of the three architecture definitions. The debug/trace unit functions within the Core are defined by Arm ARM, such as debug breakpoint/watchpoint or ETM/ETE implementations, but their special markings in the graph indicate that they have a series of registers (PIDx/CIDx) defined by Core to support the topology detection of the Coresight system.
 
 Another type represented by concatenated colors indicates that both architectures have relevant descriptions of the component. For CTI, there are different coloring schemes in different places. What I want to express is that although CTI itself is a modular and reusable design, the specific usage method is closely related to the deployed design. For example, in A Core, it is generally configured with several fixed events such as debug request/restart. In non Arm architecture processing units, designers need to connect the signals of interest to them themselves. This is also why the CTI of the Heterogeneous Cluster in the figure is not related to Arm ARM.
 
@@ -39,6 +41,24 @@ Another type represented by concatenated colors indicates that both architecture
 ### 1.1 debug register interface
 
 The ultimate goal of various forms of debugging is to obtain the state of the core and control its behavior. This is achieved by reading and writing debug registers within the core. Therefore, first of all, we will discuss the debug register interface, mainly answering two questions: how are these registers accessed and who can access them?
+
+For hardware engineers, it is intuitive to first think that the relevant registers within the core need to be accessible by external debuggers. Arm calls it the *external debug interface*, which is achieved by controlling the DAP to initiate an APB transfer to the core through the debugger. Since the debugger is not accessing a memory region at this time, a mechanism is needed to obtain the address of the debug register, which is the **ROM Table**.
+
+The field in the ROM Table that stores component addresses is a set of read-only register heaps, with each entry holding a `[x:12]` address to point to a particular component. Each component occupies 4KB of address space, which is used to store the registers of the component. Each unit within the core with an external debug interface, such as debug/trace/pmu, is indexed as a component.
+
+The following is an example of accessing a Cortex-A core within a DynamIQ Cluster to illustrate this mechanism:
+
+![Figure 1-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-1.png)
+<center style="font-size:14px;color:#C0C0C0">Figure 1-1 Debug components in DynamIQ Cluster</center></br>
+
+In the figure, the ROM Table connected to DP is called DP ROM, which is usually located at address `0x0` to discover MEM-APs in the system. For the access path to the cluster (usually using APB-AP for A core), there will be another cluster level ROM table with an address equal to the APB-AP base address `+ 0 offset` where it is located, to discover debug resources within this APB-AP subsystem.
+
+The above figure is a simplified diagram. In the actual A core SoC, there may be more nesting from DP ROM to the final Cluster level ROM Table. The following figure is an example from the Arm Corstone SSE-710 subsystem<a name="_ftnref4" href="#_ftn4">[4]</a>:
+
+![Figure 1-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-2.png)
+<center style="font-size:14px;color:#C0C0C0">Figure 1-2 ROM table structure of SSE-710</center></br>
+
+I have annotated the positions corresponding to DP ROM, APB-AP, and Cluster level ROM Table in Figure 1-1 in the upper middle. The 'Host' in SSE-710 refers to the AP (Application Processor) Compared to Figure 1-1, there are more Host ROMs and EXTDBGROMs on the path from DP to Host CPU. The former can not only point to the Cluster level ROM Table, but also to the Core sight component in the AP subsystem (roughly the green part in the dashed box in Figure 0-2); The latter involves inserting a stage between DP ROM and MEM-APs, allowing DP ROM to not only point to MEM-APs, but also to GPIO or APBCOM (related to secure debugging, as discussed below).
 
 
 ### 1.2 self-hosted debug
@@ -60,7 +80,7 @@ The ultimate goal of various forms of debugging is to obtain the state of the co
 
 ## Glossary
 
-| Term | Meaning                        |
+| **Term** | **Meaning**                |
 | ADI  | Arm Debug Interface            |
 | AON  | Always-ON                      |
 | AP   | Access Port                    |
@@ -86,3 +106,7 @@ The ultimate goal of various forms of debugging is to obtain the state of the co
 <a name="_ftn2" href="#_ftnref2">[2]</a> Arm CoreSight Architecture Specification v3.0 https://developer.arm.com/documentation/ihi0029/f/?lang=en
 
 <a name="_ftn3" href="#_ftnref3">[3]</a> Arm Debug Interface Architecture Specification ADIv6.0 https://developer.arm.com/documentation/ihi0074/d/?lang=en
+
+<a name="_ftnref4" href="#_ftn4">[4]</a> Arm Corstone SSE-710 Subsystem Technical Reference Manual https://developer.arm.com/documentation/102342/0000/?lang=en
+
+
