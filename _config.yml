@@ -7,7 +7,7 @@
 
 # Site Settings
 locale                   : "en-US"
-title                    : "Leslie Liu"
+title                    : "Home"
 title_separator          : "-"
 name                     : &name "Leslie Liu"
 #description              : &description "computational ethnographer<br/>ethnographer of computation"
@@ -85,7 +85,7 @@ author:
   location         : "Shanghai, China"
   employer         : 
   googlescholar    :
-  email            :
+  email            : w.leslieliu@gmail.com
   uri              : 
   bitbucket        :
   codepen          :
