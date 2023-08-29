@@ -60,7 +60,7 @@ The TRM of Arm core will provide an external debug memory map. Taking A53[^5] as
 
 ![Figure 1-3](https://github.com/srleslie/srleslie.github.io/blob/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-3.png?raw=true)
 
-Next, we will discuss another interface for debug register. Consider making a simple supplement to Figure 1-1: create an APB port from the interconnect to bypass the entrance of the subsystem accessed by APB-AP, as shown in the following Figure 1-4.
+Next, we will discuss another interface for debug register. Consider making a simple supplement to Figure 1-1: create an APB port from the interconnect back to the entrance of the subsystem accessed by APB-AP, as shown in the following Figure 1-4.
 
 ![Figure 1-4](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-4.png)
 
@@ -82,7 +82,7 @@ As mentioned earlier, self-hosted debugging is one of the two debugging models d
 
 **Self-hosted debug** is mainly used in systems with already deployed OS for software debugging. Using self hosted debug eliminates the need to build a connection between the chip and the external, and uses the kernel/exception handler as the debugger.
 
-Hardware engineers, including myself, are generally more familiar with the former because we are in a relatively "left" position in the development cycle of a chip. When SoC is integrated by OEM, it is highly likely that there will be no JTAG interface left (some development boards may not even have it), so it is necessary for software developers to perform on chip debugging without the help of debug probes.
+Hardware engineers, including myself, are generally more familiar with the former because we are in a relatively 'left' position in the development cycle of a chip. When SoC is integrated by OEM, it is highly likely that there will be no JTAG interface left (some development boards may not even have it), so it is necessary for software developers to perform on chip debugging without the help of debug probes.
 
 It should be noted that the on chip debug mentioned here does not mean that no external devices are needed. Arm often uses gdb based remote debugging as an example when introducing self-hosted debug[^7], as shown in the following Figure 1-6. In this case, in addition to the debug target being debugged, an additional host is also required to assist in debugging work. The most fundamental difference between the two debugging models lies in the different behaviors after a debug event (such as a breakpoint match) is triggered: in the external debug model, the core enters a halt state and hands control to the external debugger, which can obtain the internal state of the core through the DCC register. In the self hosted debug model, the core will report exceptions and trap them into the corresponding EL level for exception handling.
 
@@ -113,7 +113,7 @@ Correspondingly, let's take a look at the implementation of the Linux kernel. He
 
 The *kernel/debug* directory stores the architecture agnostic top-level implementation of gdb. The `gdb_serial_stub()` function in the kernel/debug/gdbstub.c file provides the processing function of command/package (c for continue, s for step, etc.) in remote GDB communication. The scenario here is that the debugging stops at a certain point and waits for the user to input a command at the terminal, corresponding to the core being in the debug exception state in the previous paragraph. For the processing of the s command, `gdb_serial_stub()` will call the architecture defined `kgdb_arch_handle_exception()` function, so this function is located in the arch/arm/kernel directory.
 
-Function `kgdb_arch_handle_exception()` mainly does two things to complete the s command: the first is to use `kgdb_arch_update_addr()` to try to obtain data from the command packet to update the PC, but it is easy to misunderstand the comments here. The PC is copied to ELR during exception entry, isn't it? Why is the opposite? This is because the PC mentioned in the comment refers to the processor state in the kernel stack, rather than the PC register in the hardware sense, where the `linux regs` here are actually defined by strcuct `pt_regs`. So the intention here is to change the `pt_regs.pc` to change the content in ELR and skip to the address specified in ELR during exception return, corresponding to the step of "Programs the ELR_ELx..." in the single step debugging state machine. But for single step debugging, PC is generally not rewritten.
+Function `kgdb_arch_handle_exception()` mainly does two things to complete the s command: the first is to use `kgdb_arch_update_addr()` to try to obtain data from the command packet to update the PC, but it is easy to misunderstand the comments here. The PC is copied to ELR during exception entry, isn't it? Why is the opposite? This is because the PC mentioned in the comment refers to the processor state in the kernel stack, rather than the PC register in the hardware sense, where the `linux regs` here are actually defined by strcuct `pt_regs`. So the intention here is to change the `pt_regs.pc` to change the content in ELR and skip to the address specified in ELR during exception return, corresponding to the step of 'Programs the ELR_ELx...' in the single step debugging state machine. But for single step debugging, PC is generally not rewritten.
 
 The second thing `kgdb_arch_handle_exception()` does is call the `kernel_enable_single_step()` to enable single step debugging. Through single-step debugging of the state machine, it can be seen that the enabling process is achieved by accessing the system register, so this step is architecture defined. The implementation of this function is in another file in the same directory, debug monitors.c.
 
@@ -131,7 +131,7 @@ Arm ARM v7-A achieves this support by distinguishing between core power domain a
 
 ![Figure 1-9](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/1-9.png)
 
-This solution seems so promising that it was still used in early v8-A, so why did you come up with DebugBlock? Arm has not provided an explanation for this, and I will only make some speculations based on publicly available information. Arm Community has a blog about Juno SoC[^8], and the first part discusses the issue of unstable debugger connections. Juno adopts the configuration of A72/A57+A53, which belongs to what I call the "early v8-A". Looking at their TRM, it can be found that they all support independent debug power domains. So why would this problem still occur?
+This solution seems so promising that it was still used in early v8-A, so why did you come up with DebugBlock? Arm has not provided an explanation for this, and I will only make some speculations based on publicly available information. Arm Community has a blog about Juno SoC[^8], and the first part discusses the issue of unstable debugger connections. Juno adopts the configuration of A72/A57+A53, which belongs to what I call the 'early v8-A'. Looking at their TRM, it can be found that they all support independent debug power domains. So why would this problem still occur?
 
 This blog raises a question related to the cpuidle enable in Linaro 14.10. CPU is a concept in OSPM, where the OS places a CPU without tasks into a low-power state, corresponding to hardware power control implementation, which may have different processing methods such as retention/powerdown. Around 2014, cluster idling[^9] was officially merged into power management in Linux. The so-called cluster idling refers to a modification of the arm big.LITTLE topology by traditional CPUs, allowing them to have the opportunity to idle the cluster after all cores within a cluster are idle.
 
@@ -149,12 +149,77 @@ From here, it can be seen that Powerdown support is not necessary. The overall i
 
 ## 2 Coresight & ADI
 
+Due to the fact that most definitions of Coresight & ADI can be found as corresponding instance references in Coresight SoC, the first step is to provide a background introduction to it. Arm currently offers two versions of the Coresight SoC, namely the 400 series and the 600 series. They represent the implementation of different versions of the Coresight & ADI architecture: SoC-400 implements Coresight v2 and ADIv5.2, while SoC-600 implements Coresight v3 and ADIv6.
+
+| Year | Coresight SoC  | Coresight arch | ADI arch |
+| :--- | :------------- | :------------- | :------- |
+| 2012 | SoC-400 (r1p0) | v2.0           | v5.2     |
+| 2017 | SoC-600        | v3.0           | v6.0     |
+
+The Arm core itself also needs to be compatible with the Coresight & ADI architecture. Unlike SoC-600, which simultaneously updates Coresight v3 and ADIv6, ADIv6's compatibility in Arm core will be later until v9-A. It should be noted that not being compatible with ADIv6 only means that these cores are not compatible with certain new topologies in ADIv6 during design, but SoC-600 is backward compatible and can be designed in conjunction with any Arm core.
+
+| Year | A-series core  | Coresight arch | ADI arch |
+| :--- | :------------- | :------------- | :------- |
+| 2016 | A73            | v2.0           | v5.2     |
+| 2017 | A75/A55        | v3.0           | v5.2     |
+| 2018 | A76            | v3.0           | v5.2     |
+| 2019 | A77            | v3.0           | v5.2     |
+| 2020 | A78            | v3.0           | v5.2     |
+| 2021 | A710/A510      | v3.0           | v6.0     |
 
 ### 2.1 DAP topology
 
+The so-called DAP topology refers to how DP and one or more APs form a DAP, and how DAP connects to the CPU subsystem. ADIv6 has brought some subtle but potentially significant changes to the DAP topology, and this section mainly focuses on these changes.
+
+Some press releases about the Coresight SoC-600 claim that the release of this suite brings a 'next-generation' debugging solution. Based on the following Figure 2-1, we understand that the so-called 'next generation' debugging refers to the ability to enable debuggers to connect to the debugging system without relying on traditional JTAG/SWD interfaces (reusing functional ports such as PCIe/USB in the figure).
+
+![Figure 2-1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-1.png)
+
+However, if you open the TRM of SoC-600 or ADIv6, you will find that you cannot find any new components designed to adapt to the new ports - the new architecture currently only adjusts the structure of DP/AP, providing system support for debugging without relying on JTAG/SWD debugging ports. Refer to the paragraph in ADIv6:
+
+> ADIv6 permits debug links other than JTAG or SWD to access the AP layer, so that multiple different links can be used to access debug functionality.
+
+The section 'A1.3 The debug link' provides an overview of the improvements to ADIv6. Debug link itself is a new term that refers to the implementation of physical interfaces and protocol layers that are not limited to DP, but more generally. The first sentence of A1.3 mentions that the debug link provides a memory mapped perspective on AP - which is not completely consistent with the design of ADIv5.2. Let's first take a look at the DP to AP access method in ADIv5.2.
+
+How DP accesses an AP essentially depends on the AP's programmer's model, which is the design of the AP register. From the table in the following Figure 2-2, we can see that the AP (i.e. APv1) register in ADIv5.2 is located in an 8-bit wide address space.
+
+![Figure 2-2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-2.png)
+
+ADIv5.2 DP (DPv2) addresses registers in this 8-bit address space by combining the `SELECT.APBANKSEL[7:4]` with the `A[3:2]` of an APACC request. Meanwhile, the high bit `APSEL[31:24]` of the SELECT register is used to select different APs. The following Figure 2-3 provides a schematic diagram of this access mechanism. The highlighted parts in the figure together constitute the address sent by DP.
+
+![Figure 2-3](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-3.png)
+
+From the above figure, it can be seen that for a DP + multiple AP system, an APSEL decoder is required as the intermediate layer. This intermediate layer also has an actual IP corresponding to it in the Coresight SoC-400, namely DAPBUS interconnect. The following Figure 2-4 shows its signal connection diagram. The bit width of `dappaddrs[15:2]` on the side of the slave port is exactly equal to the width of `APSEL + APBANKSEL + A`. The bit width of `dappaddrm<x>[7:2]` on one side of the master port is the width of `APBANKSEL + A`.
+
+![Figure 2-4](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-4.png)
+
+Next, compare the access methods of ADIv6. At the same chapter location, we see that the registers of APv2 are distributed within a 4KB address space, as shown in the following Figure 2-5. If you continue to scroll down, you will see the Coresight register segment starting from 0xF00. This seems very familiar - in ADIv6, AP is viewed as a debug/core component, which explains the meaning of 'debug link provides a memory mapped perspective on AP' in the previous text. At the same time, in accordance with the discovery principle of coresight components in the coresight architecture, a ROM table parallel to the AP hierarchy needs to be provided and pointed to these APs. You can find this ROM table in Figure 2-1, which does not exist in the ADIv5.2 system.
+
+![Figure 2-5](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-5.png)
+
+ADIv6 DP (DPv3) concatenates the ADDR bits of the SELECT and SELECT1 registers to form an address high bit of `[63:4]`, and then combines the `A[3:2]` of the APACC request to form the final address. The figure is omitted here, similar to Figure 2-3. For ADIv6 compatible systems, the DAP topology provided by Arm is DP + APBIC + AP. A significant difference between APBIC and DAPBUS is that it supports up to 4 slave ports, which allows more agent connections on the DP side, allowing other agents to access all APs from the same perspective as external debugging The following figure illustrates the differences between two DAP topologies, where SoC-600 forwards an interconnect access port as another debug agent.
+
+![Figure 2-6](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-6.png)
+
+PS: The system using the Coresight SoC-400 also supports forwarding the interconnect, but it needs to be forwarded to the lower level of the AP and cannot access other APs (as well as subsystems connected to other APs) in this DAP, which will look more like Figure 1-4.
 
 ### 2.2 power control
 
+In Figures 1-9, you can already see a hint of debugging power control, which is mainly achieved by outputting certain bits of the DP/AP register as power request signals to the power controller In addition to simple power on/off requests, debug power control can also instruct the power controller to enter simulated powerdown, which is a power mode that replaces true power off by turning off the clock or declaring a reset.
+
+Overall, debug power control ensures that debugging work can be completed independently and correctly at the minimum level, without the need for other channels requesting power. As for why it is 'the minimum level', refer to the Juno errata mentioned in the debug over powerdown section. From a hierarchical perspective, there are two levels of debug power control, which are named **DP power control** and **Granular power control** in this article. Among them, DP power control is described in a certain length in the ADI document, which is to some extent an "orthodox" power control mechanism. ADI divides the power domain of the system into three levels here, namely:
+
+- Always on power domain
+- System power domain
+- Debug power domain
+
+The System/Debug power domain can roughly correspond to the core/Debug power domain in Figures 1-9. The `CTRL/STAT[31:28]` of the DP register represents two pairs of handshake signals: **CxxxPWRUPREQ/ACK**. These two pairs of handshake signals are directly or indirectly connected to the PPU (through SCP) to achieve power control through DP. The ACK signal is returned by the PPU, and each pair of signals follows a basic four phase handshake. As shown in the following Figure 2-7, the debugger needs to combine the states of the REQ/ACK signals to determine the state of the target power domain.
+
+> Due to DP's ability to achieve power control over System/Debug power domains, it can be inferred that DP itself must be in a higher-level power domain - typically placed in AON domain
+
+![Figure 2-7](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2023-08-27-exploring-arm-debug-architecture/2-7.png)
+
+In a multi-core system, the system power domain is further divided, allowing each core's power to be independently turned off or on. In this model, debug power control should also be able to utilize this, which introduces Granular power control Prior to Coresight v3 & ADIv6, this mechanism was implemented in the form of an independent power requestor. In the new architecture, the Granular power control has been integrated into the ROM table, which will be introduced separately below.
 
 ### 2.3 secure debug
 
