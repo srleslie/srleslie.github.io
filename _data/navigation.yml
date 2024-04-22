@@ -13,7 +13,10 @@ main:
 #    url: /teaching/
         
   - title: "Blog Posts"
-    url: /year-archive/
+    url: /blog-posts/
+
+  - title: "School Work"
+    url: /school-work/
     
   - title: "CV"
     url: /cv/
