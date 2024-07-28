@@ -2,7 +2,7 @@
 title: "Perf on Arm"
 published: 2024-01-04
 excerpt: "This article introduces Arm's perf infrastructure from a hardware perspective and demonstrates it with some practical code."
-permalink: /posts/2024/03/perf-on-arm/ 
+permalink: /posts/2024/01/perf-on-arm/ 
 ---
 
 > This blog is also available in Chinese in https://zhuanlan.zhihu.com/p/671540004
