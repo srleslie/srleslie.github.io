@@ -1,6 +1,6 @@
 ---
 title: "Perf on Arm"
-published: 2024-03-08
+published: 2024-01-04
 excerpt: "This article introduces Arm's perf infrastructure from a hardware perspective and demonstrates it with some practical code."
 permalink: /posts/2024/03/perf-on-arm/ 
 ---
@@ -13,7 +13,7 @@ Perf is a widely used and influential performance analysis tool on the x86 Linux
 
 At Linaro Connect 2023, a team from Arm introduced a work called "Arm Telemetry Solution [^1]", which is actually a comprehensive solution on how Arm supports performance analysis at the hardware level. The following figure shows the three components of this solution. These three parts are actually the arch features of the Arm instruction set.
 
-![Figure 1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-03-08-perf-on-arm/1.png)
+![Figure 1](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-01-04-perf-on-arm/1.png)
 
 Firstly, PMU forms the cornerstone of the entire system. Although from a hardware perspective, PMU is just a set of counters, its truly important components are the intricately intertwined event signals from other modules in the core, such as IFU, LSU, etc. These event signals provide the lowest level status information of the core, which can be recognized by tools such as perf and provided to users as software and hardware interfaces to some extent. From this perspective, PMU and debug unit have considerable commonality, both of which are used to provide kernel visibility to upper level software.
 SPE and BRBE are used to optimize statistical results based on PMU or further explore hotspot paths. As pointed out in the above figure, SPE and BRBE are extensions brought by Arm A-profile v8.2 and v8.7, respectively.
@@ -70,7 +70,7 @@ It should be noted that only by accurately identifying the bottleneck characteri
 
 The simplest and most direct method is to count all events at once, and then arrange their count values in order. However, considering that the number of events supported by the kernel far exceeds its PMC, even if multiplexing and scaling can be used to some extent to compensate for this gap, this approach may still not be feasible. Therefore, currently, perf has not implemented this simple and crude full caliber statistics. Intel offers a more elegant solution, Top down Microarchitecture Analysis TMA organizes the originally flat event space based on the relevance of microarchitecture, establishing a hierarchical structure to guide developers in discovering hot events through decision trees. The following figure shows an example of the hierarchical structure of TMA.
 
-![Figure 2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-03-08-perf-on-arm/2.png)
+![Figure 2](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-01-04-perf-on-arm/2.png)
 
 In the above figure, since the lower level events are a subset of their corresponding higher-level events, the low-level detailed microarchitecture hotspot events will be transmitted to the high-level abstract clustering events. In this way, with clues to go in the right direction, both developers and tools can safely ignore unimportant events, avoiding enumerating the entire event space, making it possible to search for hotspots in engineering.
 
@@ -126,7 +126,7 @@ This blog about performance analysis [^6] and the whitepaper with its links intr
 
 Arm defines stage 1 as Topdown Analysis, which is the process of truly searching for hotspots; Stage 2 is Micro architecture exploration, which assumes that the hotspot has been found and further analyzes the hotspot event. The diagram below shows a schematic diagram of two stages:
 
-![Figure 3](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-03-08-perf-on-arm/3.png)
+![Figure 3](https://raw.githubusercontent.com/srleslie/srleslie.github.io/master/_posts/assets/2024-01-04-perf-on-arm/3.png)
 
 There are two aspects worth mentioning in this diagram: firstly, from a hardware perspective, in terms of top-down methodology, only the lowest level events actually require the kernel design team to spend time and effort defining and designing. Any event in any layer above the lowest level can be indirectly expressed through lower level events, whether through hardware or software methods. That is to say, upper level events are redundant, and benefiting from the efficiency of top-down is not without cost. In the above figure, it can be approximated that stage 2 corresponds to the bottom level event, while stage 1 corresponds to the top level event. Compared to the Intel TMA hierarchy, some intermediate levels are missing here. Arm also emphasized in whitepaper that currently stage 1 only provides level 1 events, which means that if Arm enriches intermediate level events in the future, these level 2/level 3 events will be used to expand the block diagram of stage 1 in the above figure, as they are collectively used to form a decision tree for finding hot spots.
 
