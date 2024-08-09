@@ -171,7 +171,7 @@ The following content will be added later :)
 
 [^4]: The code examples in this article are all from this book https://faculty.cs.niu.edu/~winans/notes/patmc.pdf
 
-[^5]: ttps://www.semanticscholar.org/paper/A-Top-Down-method-for-performance-analysis-and-Yasin/6776ff919597ca4feccd413208dedc401f6e655d
+[^5]: https://www.semanticscholar.org/paper/A-Top-Down-method-for-performance-analysis-and-Yasin/6776ff919597ca4feccd413208dedc401f6e655d
 
 [^6]: https://community.arm.com/arm-community-blogs/b/infrastructure-solutions-blog/posts/arm-neoverse-v1-top-down-methodology
 
