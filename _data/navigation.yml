@@ -18,6 +18,9 @@ main:
 #  - title: "School Work"
 #    url: /school-work/
     
+  - title: "Research"
+    url: /research/
+
   - title: "CV"
     url: /cv/
   
